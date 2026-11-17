@@ -1,5 +1,15 @@
 """Needles judge: compile + gold strings + grounded # source: URL.
 
+Evaluation Scope:
+This judge evaluates AST compilation (syntax validity), the presence of required
+needle strings, and citation grounding against search or fetch hops. It serves
+as a retrieval-grounding proxy for coding tasks.
+
+It does NOT execute generated code, nor does it evaluate runtime behavior,
+functional correctness, type safety, or test passage. Code that compiles and
+contains grounded needle tokens passes this evaluation even if it raises
+runtime errors or fails to produce expected output when executed.
+
 A cite is grounded if the URL appeared in search/fetch hops, or if the needle
 itself showed up in retrieved hit snippets / fetch bodies. Search queries are
 not retrieved text: putting a gold token in the query and citing a URL that
@@ -20,6 +30,16 @@ COMMENT_URL = re.compile(r"https?://[^\s#]+", re.I)
 
 @dataclass
 class JudgeScore:
+    """Benchmark outcome for a task submission.
+
+    Attributes:
+        passed: True if the code compiles, contains all required needles, and
+            has valid grounded citations. Does NOT indicate executable correctness.
+        compiled: True if Python compilation succeeded without SyntaxError.
+        output: Human-readable status ('NEEDLES_OK' or 'NEEDLES_FAIL ...').
+        notes: List of failure reasons or diagnostic notes.
+    """
+
     passed: bool
     compiled: bool
     output: str
@@ -193,6 +213,14 @@ def score_needles(
     observed_urls: list[str] | None = None,
     retrieved_text: str | None = None,
 ) -> JudgeScore:
+    """Score code against syntax validity, required token presence, and grounded citations.
+
+    Note:
+        This function checks that Python source compiles without SyntaxError,
+        that required needle tokens appear in the text, and that cited source URLs
+        are grounded in the run's retrieved text or observed URLs. It does NOT
+        execute the code or evaluate runtime / functional correctness.
+    """
     text = source or ""
     if not text.strip():
         return JudgeScore(False, False, "", ["empty submission"])

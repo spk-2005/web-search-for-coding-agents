@@ -22,6 +22,11 @@ or leaderboard snapshots.
 leads search-only at 77.3%. Task completion is mean ± SD over 3 runs on 100
 held-out tickets, model fixed at `gpt-5.6-sol`.
 
+> **Note:** Task completion in this benchmark measures syntactically valid code
+> containing cited, grounded documentation tokens (see
+> [Evaluation scope](#evaluation-scope-grounded-retrieval-proxy)); it does not
+> execute generated code or evaluate runtime functional correctness.
+
 ### Search & fetch
 
 | # | Vendor | Configuration | Task completion | Avg search | Median tokens |
@@ -101,6 +106,13 @@ behavior in a vendor's docs and write code against it. A ticket passes only if
 The last condition is what makes the score a retrieval measurement rather than a
 model measurement: the agent has to have actually found the answer, not recalled
 it.
+
+### Evaluation scope: grounded retrieval proxy
+
+"Task completion" in this benchmark is a **grounded-token and syntax retrieval proxy**, not an evaluation of executable correctness:
+
+- **What is evaluated:** Python AST compilation (`compile(..., "exec")`), presence of expected API strings/tokens ("needles"), and grounded attribution (`# source: <url>` matching observed search/fetch URLs or retrieved text).
+- **What is NOT evaluated:** Generated code is **not executed**. The benchmark does not run tests, verify runtime behavior, or evaluate functional correctness against live APIs or mock environments. A solution that compiles and contains properly cited gold tokens passes even if it raises runtime exceptions or fails at execution time.
 
 The model (`gpt-5.6-sol`), tickets, and budgets stay fixed at 32 turns, 5
 searches, and 5 fetches on search & fetch. Only the search/fetch vendor changes.
